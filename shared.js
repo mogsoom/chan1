@@ -3,10 +3,10 @@ const APP_PREFIX = "chan_stage_kpop_v1_";
 const ADMIN_PASSWORD = "790822";
 
 const defaultMissions = [
-  { id: 1, title: "전기기능사 CBT 20문제", level: "NORMAL", category: "ELECTRIC", done: false },
-  { id: 2, title: "전기기기 강의 1개", level: "NORMAL", category: "ELECTRIC", done: false },
-  { id: 3, title: "CapCut 10분 연습", level: "EASY", category: "GITC", done: false },
-  { id: 4, title: "GITC 영상 아이디어 1개", level: "EASY", category: "GITC", done: false }
+  { id: 1, title: "전기기능사 CBT 30문제", level: "NORMAL", category: "ELECTRIC", done: false },
+  { id: 2, title: "전기실기 강의 1개", level: "NORMAL", category: "ELECTRIC", done: false },
+  { id: 3, title: "AI 프롬프트 생성하기", level: "EASY", category: "GITC", done: false },
+  { id: 4, title: "GITC 대회준비", level: "EASY", category: "GITC", done: false }
 ];
 
 const lights = ["💜", "🩵", "💚", "⭐", "🎤", "✨"];
