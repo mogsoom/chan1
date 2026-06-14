@@ -1,6 +1,6 @@
 
 const APP_PREFIX = "chan_stage_kpop_v1_";
-const ADMIN_PASSWORD = "1234";
+const ADMIN_PASSWORD = "790822";
 
 const defaultMissions = [
   { id: 1, title: "전기기능사 CBT 20문제", level: "NORMAL", category: "ELECTRIC", done: false },
