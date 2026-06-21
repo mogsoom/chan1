@@ -3,28 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CHAN STAGE - Admin</title>
+  <title>찬 미션판 보호자 화면</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 <main class="app">
   <header class="hero">
-    <h1>🎛️ STAGE ADMIN</h1>
-    <p class="subtitle">보호자 관리 화면</p>
-    <div class="nav"><a class="link-btn dark-btn" href="student.html">학생 화면</a></div>
+    <h1>🎛️ 찬 미션판 보호자 화면</h1>
+    <p class="subtitle">미션 등록 · 오늘 체크 확인 · 월간 기록</p>
+    <div class="status-badge" id="statusBadge">Firebase 연결 확인 중</div>
+    <div class="nav"><a class="link-btn dark-btn" href="student.html">찬 화면</a></div>
   </header>
 
   <section class="panel">
-    <h2>🔐 LOGIN</h2>
+    <h2>🔐 로그인</h2>
     <div class="two-grid">
       <input id="passwordInput" type="password" placeholder="비밀번호" />
       <button class="neon-btn" id="loginBtn">로그인</button>
     </div>
-    <p class="hint">기본 비밀번호는 1234입니다. shared.js의 ADMIN_PASSWORD 값을 바꾸면 변경됩니다.</p>
+    <p class="empty-message">기본 비밀번호는 firebase-config.js의 ADMIN_PASSWORD 값입니다.</p>
   </section>
 
   <section class="panel admin-only">
-    <h2>📅 MONTH</h2>
+    <h2>📅 월 선택</h2>
     <div class="month-control">
       <button class="dark-btn small-btn" id="prevMonthBtn">◀ 이전 달</button>
       <div class="month-title" id="monthTitle"></div>
@@ -33,168 +34,361 @@
   </section>
 
   <section class="panel admin-only">
-    <h2>➕ MISSION SET</h2>
+    <h2>➕ 매일 반복 미션 등록</h2>
     <div class="form-grid">
       <input id="missionInput" type="text" placeholder="미션 이름" />
       <select id="levelSelect">
-        <option value="EASY">EASY</option>
-        <option value="NORMAL">NORMAL</option>
-        <option value="HARD">HARD</option>
+        <option value="쉬움">쉬움</option>
+        <option value="보통">보통</option>
+        <option value="어려움">어려움</option>
       </select>
       <select id="categorySelect">
-        <option value="ELECTRIC">ELECTRIC</option>
+        <option value="전기기능사">전기기능사</option>
         <option value="GITC">GITC</option>
-        <option value="SCHOOL">SCHOOL</option>
-        <option value="CONTEST">CONTEST</option>
-        <option value="LIFE">LIFE</option>
+        <option value="영상편집">영상편집</option>
+        <option value="학교">학교</option>
+        <option value="기능대회">기능대회</option>
+        <option value="생활">생활</option>
       </select>
       <button class="pink-btn" id="saveMissionBtn">등록</button>
     </div>
-    <p class="hint" id="editHint">아래 목록에서 수정할 미션을 선택할 수 있어요.</p>
   </section>
 
   <section class="panel admin-only">
-    <h2>📝 MISSION LIST</h2>
+    <h2>📝 미션 목록</h2>
     <div class="missions" id="missionList"></div>
   </section>
 
   <section class="panel admin-only">
-    <h2>🎁 REWARD</h2>
+    <h2>🎁 보상 문구</h2>
     <div class="two-grid">
-      <input id="smallRewardInput" type="text" placeholder="10 LIGHT 보상" />
-      <input id="bigRewardInput" type="text" placeholder="20 LIGHT 보상" />
+      <input id="smallRewardInput" type="text" placeholder="10개 보상" />
+      <input id="bigRewardInput" type="text" placeholder="20개 보상" />
     </div>
     <button class="neon-btn" id="saveRewardBtn" style="margin-top:12px;">보상 저장</button>
   </section>
 
   <section class="panel admin-only">
-    <h2>📊 MONTH REPORT</h2>
+    <h2>📊 오늘 / 이번 달 현황</h2>
     <div class="progress-row">
       <div class="exp-label" id="summaryText"></div>
       <div class="bar-wrap"><div class="bar" id="progressBar"></div></div>
     </div>
     <table>
-      <thead><tr><th>분류</th><th>CLEAR</th><th>TOTAL</th></tr></thead>
+      <thead>
+        <tr><th>분류</th><th>오늘 완료</th><th>전체 미션</th></tr>
+      </thead>
       <tbody id="statBody"></tbody>
     </table>
   </section>
 
   <section class="panel admin-only">
-    <h2>📅 MONTH STAGE</h2>
+    <h2>📅 월간 기록</h2>
     <div class="month-board" id="monthBoard"></div>
   </section>
 
   <section class="panel admin-only">
-    <h2>🧹 RESET</h2>
+    <h2>🧹 초기화</h2>
     <div class="two-grid">
-      <button class="red-btn" id="resetTodayBtn">오늘 기록 초기화</button>
+      <button class="red-btn" id="resetTodayBtn">오늘 체크만 초기화</button>
       <button class="red-btn" id="resetMonthBtn">이번 달 전체 초기화</button>
     </div>
   </section>
 </main>
 <div class="toast" id="toast"></div>
-<script src="shared.js"></script>
-<script>
-let unlocked=false, editingId=null;
-const today=todayInfo();
-let currentYear=today.year, currentMonth=today.month, currentKey=monthKey(currentYear,currentMonth);
-let data=loadMonthData(currentKey);
 
-const adminOnly=document.querySelectorAll(".admin-only");
-const monthTitle=document.getElementById("monthTitle");
-const missionInput=document.getElementById("missionInput");
-const levelSelect=document.getElementById("levelSelect");
-const categorySelect=document.getElementById("categorySelect");
-const missionList=document.getElementById("missionList");
-const saveMissionBtn=document.getElementById("saveMissionBtn");
-const editHint=document.getElementById("editHint");
-const smallRewardInput=document.getElementById("smallRewardInput");
-const bigRewardInput=document.getElementById("bigRewardInput");
-const summaryText=document.getElementById("summaryText");
-const progressBar=document.getElementById("progressBar");
-const statBody=document.getElementById("statBody");
-const monthBoard=document.getElementById("monthBoard");
-const toast=document.getElementById("toast");
+<script type="module">
+import { ADMIN_PASSWORD } from "./firebase-config.js";
+import {
+  todayInfo, monthKey, dateKey, categoryIcon, isFirebaseConfigured,
+  watchMonthData, saveMonthData, freshMonthData, getMonthBadgeCount,
+  getTodayDoneCount, isMissionDone
+} from "./shared.js";
 
-function showToast(msg){toast.textContent=msg;toast.classList.add("show");setTimeout(()=>toast.classList.remove("show"),1200)}
-function save(){saveMonthData(currentKey,data)}
-function setVisible(){adminOnly.forEach(x=>x.style.display=unlocked?"":"none")}
-function reload(){currentKey=monthKey(currentYear,currentMonth);data=loadMonthData(currentKey);editingId=null;missionInput.value="";saveMissionBtn.textContent="등록";render()}
+let unlocked = false;
+let editingId = null;
+let unsubscribe = null;
+let data = null;
 
-function saveMission(){
-  const title=missionInput.value.trim();
-  if(!title){alert("미션 이름을 적어주세요.");return;}
-  if(editingId){
-    const m=data.missions.find(x=>x.id===editingId);
-    if(m){m.title=title;m.level=levelSelect.value;m.category=categorySelect.value}
-    editingId=null;saveMissionBtn.textContent="등록";editHint.textContent="수정 완료!";
-  }else{
-    data.missions.push({id:Date.now(),title,level:levelSelect.value,category:categorySelect.value,done:false});
+const today = todayInfo();
+let currentYear = today.year;
+let currentMonth = today.month;
+let currentKey = monthKey(currentYear, currentMonth);
+
+const statusBadge = document.getElementById("statusBadge");
+const adminOnly = document.querySelectorAll(".admin-only");
+const monthTitle = document.getElementById("monthTitle");
+const missionInput = document.getElementById("missionInput");
+const levelSelect = document.getElementById("levelSelect");
+const categorySelect = document.getElementById("categorySelect");
+const missionList = document.getElementById("missionList");
+const saveMissionBtn = document.getElementById("saveMissionBtn");
+const smallRewardInput = document.getElementById("smallRewardInput");
+const bigRewardInput = document.getElementById("bigRewardInput");
+const summaryText = document.getElementById("summaryText");
+const progressBar = document.getElementById("progressBar");
+const statBody = document.getElementById("statBody");
+const monthBoard = document.getElementById("monthBoard");
+const toast = document.getElementById("toast");
+
+function setStatus(text, ok = true) {
+  statusBadge.textContent = text;
+  statusBadge.classList.toggle("off", !ok);
+}
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 1200);
+}
+
+function setVisible() {
+  adminOnly.forEach(x => x.style.display = unlocked ? "" : "none");
+}
+
+function startWatch() {
+  if (unsubscribe) unsubscribe();
+
+  if (!isFirebaseConfigured()) {
+    setStatus("Firebase 설정 필요", false);
+    return;
   }
-  missionInput.value="";save();render();showToast("저장 완료");
-}
-function startEdit(id){
-  const m=data.missions.find(x=>x.id===id); if(!m)return;
-  editingId=id; missionInput.value=m.title; levelSelect.value=m.level; categorySelect.value=m.category;
-  saveMissionBtn.textContent="수정 완료"; editHint.textContent="수정 후 버튼을 눌러주세요.";
-  scrollTo({top:0,behavior:"smooth"});
-}
-function del(id){if(!confirm("삭제할까요?"))return;data.missions=data.missions.filter(x=>x.id!==id);save();render()}
-function toggle(id){const m=data.missions.find(x=>x.id===id); if(m){m.done=!m.done;save();render()}}
 
-function renderMissions(){
-  missionList.innerHTML="";
-  if(!data.missions.length){missionList.innerHTML='<div class="empty-message">등록된 미션이 없어요.</div>';return}
-  data.missions.forEach(m=>{
-    const card=document.createElement("article");
-    card.className="mission"+(m.done?" done":"");
-    card.innerHTML=`
-      <div class="mission-title">${categoryIcon(m.category)} ${m.done?"CLEAR: ":""}${m.title}</div>
-      <span class="tag">${m.category} · ${m.level}</span>
+  currentKey = monthKey(currentYear, currentMonth);
+  unsubscribe = watchMonthData(
+    currentKey,
+    (newData) => {
+      data = newData;
+      setStatus("실시간 연결됨", true);
+      render();
+    },
+    () => setStatus("Firebase 연결 실패", false)
+  );
+}
+
+async function save() {
+  await saveMonthData(currentKey, data);
+}
+
+async function saveMission() {
+  if (!data) return;
+
+  const title = missionInput.value.trim();
+  if (!title) {
+    alert("미션 이름을 적어주세요.");
+    return;
+  }
+
+  if (editingId) {
+    const m = data.missions.find(x => String(x.id) === String(editingId));
+    if (m) {
+      m.title = title;
+      m.level = levelSelect.value;
+      m.category = categorySelect.value;
+    }
+    editingId = null;
+    saveMissionBtn.textContent = "등록";
+  } else {
+    data.missions.push({
+      id: Date.now(),
+      title,
+      level: levelSelect.value,
+      category: categorySelect.value
+    });
+  }
+
+  missionInput.value = "";
+  await save();
+  showToast("저장 완료");
+}
+
+function startEdit(id) {
+  const m = data.missions.find(x => String(x.id) === String(id));
+  if (!m) return;
+
+  editingId = m.id;
+  missionInput.value = m.title;
+  levelSelect.value = m.level;
+  categorySelect.value = m.category;
+  saveMissionBtn.textContent = "수정 완료";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function delMission(id) {
+  if (!confirm("미션을 삭제할까요?")) return;
+
+  data.missions = data.missions.filter(x => String(x.id) !== String(id));
+
+  // 삭제된 미션의 오늘/이전 완료 기록은 남겨두어도 월간 기록이 보존됩니다.
+  await save();
+  showToast("삭제 완료");
+}
+
+function renderMissions() {
+  missionList.innerHTML = "";
+
+  if (!data || !data.missions.length) {
+    missionList.innerHTML = '<div class="empty-message">등록된 미션이 없어요.</div>';
+    return;
+  }
+
+  data.missions.forEach(m => {
+    const todayDone = isMissionDone(data, today.dateKey, m.id);
+    const card = document.createElement("article");
+    card.className = "mission" + (todayDone ? " done" : "");
+    card.innerHTML = `
+      <div class="mission-title">${categoryIcon(m.category)} ${m.title}</div>
+      <span class="tag">${m.category} · ${m.level} · 오늘 ${todayDone ? "완료" : "미완료"}</span>
       <div class="actions">
-        <button class="neon-btn small-btn">CLEAR전환</button>
         <button class="dark-btn small-btn">수정</button>
         <button class="red-btn small-btn">삭제</button>
-      </div>`;
-    const b=card.querySelectorAll("button");
-    b[0].onclick=()=>toggle(m.id); b[1].onclick=()=>startEdit(m.id); b[2].onclick=()=>del(m.id);
+      </div>
+    `;
+    const buttons = card.querySelectorAll("button");
+    buttons[0].onclick = () => startEdit(m.id);
+    buttons[1].onclick = () => delMission(m.id);
     missionList.appendChild(card);
-  })
+  });
 }
-function renderReward(){smallRewardInput.value=data.rewards?.small||"";bigRewardInput.value=data.rewards?.big||""}
-function renderStats(){
-  const total=data.missions.length, done=data.missions.filter(x=>x.done).length;
-  const lightCount=getMonthLightCount(data), p=total?Math.round(done/total*100):0;
-  summaryText.textContent=`${currentKey} / MISSION ${done}/${total} CLEAR / FAN LIGHT ${lightCount}`;
-  progressBar.style.width=p+"%";
-  const map={};
-  data.missions.forEach(m=>{const c=m.category||"ETC"; if(!map[c])map[c]={done:0,total:0}; map[c].total++; if(m.done)map[c].done++});
-  statBody.innerHTML="";
-  Object.entries(map).forEach(([k,v])=>{const tr=document.createElement("tr");tr.innerHTML=`<td>${k}</td><td>${v.done}</td><td>${v.total}</td>`;statBody.appendChild(tr)})
-  if(!Object.keys(map).length)statBody.innerHTML="<tr><td colspan='3'>기록 없음</td></tr>";
+
+function renderReward() {
+  smallRewardInput.value = data?.rewards?.small || "";
+  bigRewardInput.value = data?.rewards?.big || "";
 }
-function renderMonth(){
-  monthBoard.innerHTML="";
-  const first=new Date(currentYear,currentMonth-1,1).getDay(), last=new Date(currentYear,currentMonth,0).getDate();
-  for(let i=0;i<first;i++){const e=document.createElement("div");e.className="day-cell empty";monthBoard.appendChild(e)}
-  for(let d=1;d<=last;d++){
-    const dk=dateKey(currentYear,currentMonth,d), arr=data.dailyLights[dk]||[];
-    const cell=document.createElement("div");cell.className="day-cell"+(currentYear===today.year&&currentMonth===today.month&&d===today.date?" today":"");
-    cell.innerHTML=`<div class="day-num">${d}일</div><div class="day-lights">${arr.map(x=>x.icon).join("")}</div>${arr.length?`<div class="day-num">${arr.length} LIGHT</div>`:""}`;
+
+function renderStats() {
+  const total = data?.missions?.length || 0;
+  const doneToday = data ? getTodayDoneCount(data, today.dateKey) : 0;
+  const monthCount = data ? getMonthBadgeCount(data) : 0;
+  const p = total ? Math.round(doneToday / total * 100) : 0;
+
+  summaryText.textContent = `${currentKey} / 오늘 ${doneToday}/${total} 완료 / 이번 달 배지 ${monthCount}개`;
+  progressBar.style.width = p + "%";
+
+  const map = {};
+  (data?.missions || []).forEach(m => {
+    const c = m.category || "기타";
+    if (!map[c]) map[c] = { done: 0, total: 0 };
+    map[c].total++;
+    if (isMissionDone(data, today.dateKey, m.id)) map[c].done++;
+  });
+
+  statBody.innerHTML = "";
+  Object.entries(map).forEach(([k, v]) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${k}</td><td>${v.done}</td><td>${v.total}</td>`;
+    statBody.appendChild(tr);
+  });
+
+  if (!Object.keys(map).length) {
+    statBody.innerHTML = "<tr><td colspan='3'>기록 없음</td></tr>";
+  }
+}
+
+function renderMonth() {
+  monthBoard.innerHTML = "";
+
+  const first = new Date(currentYear, currentMonth - 1, 1).getDay();
+  const last = new Date(currentYear, currentMonth, 0).getDate();
+
+  for (let i = 0; i < first; i++) {
+    const e = document.createElement("div");
+    e.className = "day-cell empty";
+    monthBoard.appendChild(e);
+  }
+
+  for (let d = 1; d <= last; d++) {
+    const dk = dateKey(currentYear, currentMonth, d);
+    const arr = data?.dailyBadges?.[dk] || [];
+    const doneCount = Object.values(data?.dailyDone?.[dk] || {}).filter(Boolean).length;
+    const cell = document.createElement("div");
+    cell.className = "day-cell" + (currentYear === today.year && currentMonth === today.month && d === today.date ? " today" : "");
+    cell.innerHTML = `
+      <div class="day-num">${d}일</div>
+      <div class="day-lights">${arr.map(x => x.icon).join("")}</div>
+      ${doneCount ? `<div class="day-num">${doneCount}개 완료</div>` : ""}
+    `;
     monthBoard.appendChild(cell);
   }
 }
-function render(){monthTitle.textContent=`${currentYear}년 ${currentMonth}월`;renderMissions();renderReward();renderStats();renderMonth();setVisible()}
 
-document.getElementById("loginBtn").onclick=()=>{if(document.getElementById("passwordInput").value===ADMIN_PASSWORD){unlocked=true;render();showToast("LOGIN OK")}else alert("비밀번호가 맞지 않아요.")};
-document.getElementById("prevMonthBtn").onclick=()=>{currentMonth--;if(currentMonth<1){currentMonth=12;currentYear--}reload()};
-document.getElementById("nextMonthBtn").onclick=()=>{currentMonth++;if(currentMonth>12){currentMonth=1;currentYear++}reload()};
-saveMissionBtn.onclick=saveMission;
-missionInput.onkeydown=e=>{if(e.key==="Enter")saveMission()};
-document.getElementById("saveRewardBtn").onclick=()=>{data.rewards={small:smallRewardInput.value.trim()||"작은 보상",big:bigRewardInput.value.trim()||"큰 보상"};save();render();showToast("보상 저장")};
-document.getElementById("resetTodayBtn").onclick=()=>{if(!confirm("오늘 기록 초기화?"))return;const tk=todayInfo().dateKey;if(data.dailyLights[tk])data.dailyLights[tk]=[];data.missions=data.missions.map(x=>({...x,done:false}));save();render()};
-document.getElementById("resetMonthBtn").onclick=()=>{if(!confirm("이번 달 전체 초기화?"))return;data=freshMonthData();save();render()};
-render();
+function render() {
+  monthTitle.textContent = currentKey;
+  renderMissions();
+  renderReward();
+  renderStats();
+  renderMonth();
+}
+
+document.getElementById("loginBtn").onclick = () => {
+  const input = document.getElementById("passwordInput").value;
+  if (input === ADMIN_PASSWORD) {
+    unlocked = true;
+    setVisible();
+    startWatch();
+    showToast("로그인 완료");
+  } else {
+    alert("비밀번호가 달라요.");
+  }
+};
+
+document.getElementById("prevMonthBtn").onclick = () => {
+  currentMonth--;
+  if (currentMonth < 1) {
+    currentMonth = 12;
+    currentYear--;
+  }
+  startWatch();
+};
+
+document.getElementById("nextMonthBtn").onclick = () => {
+  currentMonth++;
+  if (currentMonth > 12) {
+    currentMonth = 1;
+    currentYear++;
+  }
+  startWatch();
+};
+
+saveMissionBtn.onclick = saveMission;
+
+document.getElementById("saveRewardBtn").onclick = async () => {
+  if (!data) return;
+  data.rewards = {
+    small: smallRewardInput.value.trim() || "작은 보상",
+    big: bigRewardInput.value.trim() || "큰 보상"
+  };
+  await save();
+  showToast("보상 저장 완료");
+};
+
+document.getElementById("resetTodayBtn").onclick = async () => {
+  if (!data) return;
+  if (!confirm("오늘 체크와 오늘 배지만 지울까요?")) return;
+  delete data.dailyDone[today.dateKey];
+  delete data.dailyBadges[today.dateKey];
+  await save();
+  showToast("오늘 기록 초기화");
+};
+
+document.getElementById("resetMonthBtn").onclick = async () => {
+  if (!confirm("이번 달 전체 기록을 초기화할까요? 미션도 기본값으로 돌아갑니다.")) return;
+  data = freshMonthData();
+  await save();
+  showToast("이번 달 초기화 완료");
+};
+
+missionInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") saveMission();
+});
+
+setVisible();
+
+if (!isFirebaseConfigured()) {
+  setStatus("Firebase 설정 필요", false);
+} else {
+  setStatus("로그인 후 연결", true);
+}
 </script>
 </body>
 </html>

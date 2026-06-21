@@ -3,36 +3,37 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CHAN STAGE - Student</title>
+  <title>찬의 전기 × IT 챌린지 미션판</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 <main class="app">
   <header class="hero">
-    <h1>🎤 CHAN STAGE</h1>
-    <p class="subtitle">오늘도 하나씩 성공하자</p>
-    <div class="stage-badge" id="levelBadge">LV.1 TRAINEE</div>
-    <div class="nav"><a class="link-btn dark-btn" href="admin.html">admin</a></div>
+    <h1>⚡ 찬의 전기 × IT 챌린지</h1>
+    <p class="subtitle">매일 체크하고 배지를 모으자!</p>
+    <div class="stage-badge" id="levelBadge">LV.1 도전 시작</div>
+    <div class="status-badge" id="statusBadge">Firebase 연결 확인 중</div>
+    <div class="nav"><a class="link-btn dark-btn" href="admin.html">보호자 화면</a></div>
   </header>
 
   <section class="panel dashboard">
     <div class="stat-card">
-      <h2>🌟 STAGE STATUS</h2>
-      <div class="big-level" id="bigLevel">LV.1 TRAINEE</div>
-      <div class="exp-label" id="expText">이번 달 성공불빛 0개</div>
-      <div class="bar-wrap"><div class="bar" id="expBar"></div></div>
+      <h2>📊 이번 달 성장</h2>
+      <div class="big-level" id="bigLevel">LV.1 도전 시작</div>
+      <div class="exp-label" id="monthText">이번 달 배지 0개</div>
+      <div class="bar-wrap"><div class="bar" id="monthBar"></div></div>
     </div>
     <div class="stat-card">
-      <h2>🎁 REWARD</h2>
+      <h2>🎁 오늘 보상</h2>
       <div class="reward-box">
-        <div class="reward" id="smallReward">빛10</div>
-        <div class="reward" id="bigReward">빛20</div>
+        <div class="reward" id="smallReward">10개: 작은 보상</div>
+        <div class="reward" id="bigReward">20개: 큰 보상</div>
       </div>
     </div>
   </section>
 
   <section class="panel">
-    <h2>🎬 TODAY'S STAGE</h2>
+    <h2>✅ 오늘 할 일</h2>
     <div class="progress-row">
       <div class="exp-label" id="progressText">오늘 0개 중 0개 완료</div>
       <div class="bar-wrap"><div class="bar" id="progressBar"></div></div>
@@ -41,120 +42,187 @@
   </section>
 
   <section class="panel">
-    <h2>🩵 FAN LIGHT BOARD</h2>
-    <div class="light-board" id="lightBoard"></div>
+    <h2>🏅 오늘 배지</h2>
+    <div class="light-board" id="badgeBoard"></div>
   </section>
 
   <section class="panel">
-    <h2>📅 MONTH STAGE</h2>
+    <h2>📅 이번 달 기록</h2>
     <div class="month-board" id="monthBoard"></div>
   </section>
 
-  <footer>완벽하지 않아도 괜찮아.<br> 오늘 무대에 올라간 것이 성공!</footer>
+  <footer>오늘 하나만 해도 성공!</footer>
 </main>
 <div class="toast" id="toast"></div>
-<script src="shared.js"></script>
-<script>
+
+<script type="module">
+import {
+  todayInfo, dateKey, rand, badgeIcons, cheers, getBadges, getDoneMap,
+  getMonthBadgeCount, getLevel, categoryIcon, isFirebaseConfigured,
+  watchMonthData, saveMonthData, isMissionDone, getTodayDoneCount
+} from "./shared.js";
+
 const t = todayInfo();
 const key = t.monthKey;
-let data = loadMonthData(key);
+let data = null;
 
+const statusBadge = document.getElementById("statusBadge");
 const missionList = document.getElementById("missionList");
-const lightBoard = document.getElementById("lightBoard");
+const badgeBoard = document.getElementById("badgeBoard");
 const monthBoard = document.getElementById("monthBoard");
 const progressText = document.getElementById("progressText");
 const progressBar = document.getElementById("progressBar");
-const expText = document.getElementById("expText");
-const expBar = document.getElementById("expBar");
+const monthText = document.getElementById("monthText");
+const monthBar = document.getElementById("monthBar");
 const levelBadge = document.getElementById("levelBadge");
 const bigLevel = document.getElementById("bigLevel");
 const toast = document.getElementById("toast");
 const smallReward = document.getElementById("smallReward");
 const bigReward = document.getElementById("bigReward");
 
-function showToast(msg){
+function setStatus(text, ok = true) {
+  statusBadge.textContent = text;
+  statusBadge.classList.toggle("off", !ok);
+}
+
+function showToast(msg) {
   toast.textContent = msg;
   toast.classList.add("show");
-  setTimeout(()=>toast.classList.remove("show"), 1400);
+  setTimeout(() => toast.classList.remove("show"), 1400);
 }
-function completeMission(id){
-  const m = data.missions.find(x=>x.id===id);
-  if(!m || m.done) return;
-  m.done = true;
-  const todayLights = getTodayLights(data, t.dateKey);
-  if(todayLights.length < 20) todayLights.push({icon:rand(lights), text:"LIGHT ON"});
-  saveMonthData(key, data);
-  render();
+
+async function completeMission(id) {
+  if (!data) return;
+
+  const mission = data.missions.find(m => String(m.id) === String(id));
+  if (!mission || isMissionDone(data, t.dateKey, mission.id)) return;
+
+  const doneMap = getDoneMap(data, t.dateKey);
+  doneMap[String(mission.id)] = true;
+
+  const badges = getBadges(data, t.dateKey);
+  if (badges.length < 20) {
+    badges.push({
+      icon: categoryIcon(mission.category) || rand(badgeIcons),
+      text: "완료",
+      missionId: String(mission.id),
+      title: mission.title
+    });
+  }
+
+  await saveMonthData(key, data);
   showToast(rand(cheers));
 }
-function renderMissions(){
+
+function renderMissions() {
   missionList.innerHTML = "";
-  if(data.missions.length === 0){
-    missionList.innerHTML = '<div class="empty-message">오늘의 무대가 비어 있어요.</div>';
+
+  if (!data || !data.missions.length) {
+    missionList.innerHTML = '<div class="empty-message">오늘 미션이 없어요.</div>';
     return;
   }
-  data.missions.forEach(m=>{
+
+  data.missions.forEach(m => {
+    const done = isMissionDone(data, t.dateKey, m.id);
     const card = document.createElement("article");
-    card.className = "mission" + (m.done ? " done" : "");
+    card.className = "mission" + (done ? " done" : "");
     card.innerHTML = `
-      <div class="mission-title">${categoryIcon(m.category)} ${m.done ? "CLEAR: " : ""}${m.title}</div>
+      <div class="mission-title">${categoryIcon(m.category)} ${done ? "완료됨: " : ""}${m.title}</div>
       <span class="tag">${m.category} · ${m.level}</span>
     `;
     const btn = document.createElement("button");
-    btn.className = "neon-btn";
-    btn.textContent = m.done ? "CLEAR ✓" : "MISSION CLEAR";
-    btn.disabled = m.done;
-    btn.addEventListener("click", ()=>completeMission(m.id));
+    btn.className = "complete-btn";
+    btn.textContent = done ? "완료됨 ✓" : "완료!";
+    btn.disabled = done;
+    btn.addEventListener("click", () => completeMission(m.id));
     card.appendChild(btn);
     missionList.appendChild(card);
   });
 }
-function renderLightBoard(){
-  lightBoard.innerHTML = "";
-  const arr = getTodayLights(data, t.dateKey);
-  for(let i=0;i<20;i++){
+
+function renderBadges() {
+  badgeBoard.innerHTML = "";
+  const arr = data ? getBadges(data, t.dateKey) : [];
+
+  for (let i = 0; i < 20; i++) {
     const cell = document.createElement("div");
     cell.className = "light-cell" + (arr[i] ? " on" : "");
     cell.textContent = arr[i] ? arr[i].icon : "OFF";
-    lightBoard.appendChild(cell);
+    badgeBoard.appendChild(cell);
   }
-  smallReward.textContent = `10 LIGHT: ${data.rewards?.small || "작은 보상"}`;
-  bigReward.textContent = `20 LIGHT: ${data.rewards?.big || "큰 보상"}`;
+
+  smallReward.textContent = `10개: ${data?.rewards?.small || "작은 보상"}`;
+  bigReward.textContent = `20개: ${data?.rewards?.big || "큰 보상"}`;
   smallReward.classList.toggle("active", arr.length >= 10);
   bigReward.classList.toggle("active", arr.length >= 20);
 }
-function renderMonthBoard(){
+
+function renderMonthBoard() {
   monthBoard.innerHTML = "";
-  const first = new Date(t.year, t.month-1, 1).getDay();
+  const first = new Date(t.year, t.month - 1, 1).getDay();
   const last = new Date(t.year, t.month, 0).getDate();
-  for(let i=0;i<first;i++){
-    const e=document.createElement("div"); e.className="day-cell empty"; monthBoard.appendChild(e);
+
+  for (let i = 0; i < first; i++) {
+    const e = document.createElement("div");
+    e.className = "day-cell empty";
+    monthBoard.appendChild(e);
   }
-  for(let d=1;d<=last;d++){
-    const dk = dateKey(t.year,t.month,d);
-    const arr = data.dailyLights[dk] || [];
+
+  for (let d = 1; d <= last; d++) {
+    const dk = dateKey(t.year, t.month, d);
+    const arr = data?.dailyBadges?.[dk] || [];
+    const doneCount = Object.values(data?.dailyDone?.[dk] || {}).filter(Boolean).length;
     const cell = document.createElement("div");
-    cell.className = "day-cell" + (d===t.date ? " today" : "");
-    cell.innerHTML = `<div class="day-num">${d}일</div><div class="day-lights">${arr.map(x=>x.icon).join("")}</div>${arr.length ? `<div class="day-num">${arr.length} LIGHT</div>` : ""}`;
+    cell.className = "day-cell" + (d === t.date ? " today" : "");
+    cell.innerHTML = `
+      <div class="day-num">${d}일</div>
+      <div class="day-lights">${arr.map(x => x.icon).join("")}</div>
+      ${doneCount ? `<div class="day-num">${doneCount}개 완료</div>` : ""}
+    `;
     monthBoard.appendChild(cell);
   }
 }
-function renderStatus(){
-  const total = data.missions.length;
-  const done = data.missions.filter(x=>x.done).length;
-  const p = total ? Math.round(done/total*100) : 0;
-  progressText.textContent = `오늘 ${total}개 중 ${done}개 CLEAR`;
+
+function renderStatus() {
+  const total = data?.missions?.length || 0;
+  const done = data ? getTodayDoneCount(data, t.dateKey) : 0;
+  const p = total ? Math.round(done / total * 100) : 0;
+
+  progressText.textContent = `오늘 ${total}개 중 ${done}개 완료`;
   progressBar.style.width = p + "%";
 
-  const monthCount = getMonthLightCount(data);
+  const monthCount = data ? getMonthBadgeCount(data) : 0;
   const lv = getLevel(monthCount);
   levelBadge.textContent = `LV.${lv.level} ${lv.name}`;
   bigLevel.textContent = `LV.${lv.level} ${lv.name}`;
-  expText.textContent = `이번 달 팬라이트 ${monthCount}개`;
-  expBar.style.width = Math.min(100, (monthCount % 25) * 4) + "%";
+  monthText.textContent = `이번 달 배지 ${monthCount}개`;
+  monthBar.style.width = Math.min(100, monthCount * 2) + "%";
 }
-function render(){ renderMissions(); renderLightBoard(); renderMonthBoard(); renderStatus(); }
-render();
+
+function render() {
+  renderMissions();
+  renderBadges();
+  renderMonthBoard();
+  renderStatus();
+}
+
+if (!isFirebaseConfigured()) {
+  setStatus("Firebase 설정 필요", false);
+  missionList.innerHTML = '<div class="empty-message">firebase-config.js 설정값이 필요해요.</div>';
+} else {
+  watchMonthData(
+    key,
+    (newData) => {
+      data = newData;
+      setStatus("실시간 연결됨", true);
+      render();
+    },
+    () => {
+      setStatus("Firebase 연결 실패", false);
+      missionList.innerHTML = '<div class="empty-message">Firebase 연결 또는 권한을 확인해 주세요.</div>';
+    }
+  );
+}
 </script>
 </body>
 </html>

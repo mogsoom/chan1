@@ -1,25 +1,19 @@
-CHAN STAGE K-POP v1 사용 방법
+찬 미션판 매일체크 + Firebase 동기화 수정본
 
-파일 구성:
-- student.html : 학생 화면
-- admin.html : 보호자 화면
-- style.css : 디자인
-- shared.js : 공통 데이터/비밀번호
-
-실행:
-1. 압축을 풉니다.
-2. student.html을 열면 학생 화면이 보입니다.
-3. admin.html을 열면 보호자 화면이 보입니다.
-4. 보호자 비밀번호는 1234입니다.
-
-웹서버 업로드:
-- 위 4개 파일을 같은 폴더에 올리세요.
-- 예: https://도메인/chan-stage/student.html
-- 예: https://도메인/chan-stage/admin.html
+교체 파일:
+- admin.html
+- student.html
+- shared.js
+- style.css
 
 중요:
-- 현재 버전은 localStorage 저장입니다.
-- 같은 기기/같은 브라우저에서는 학생/보호자 화면이 기록을 공유합니다.
-- 다른 기기에서 실시간 공유하려면 Firebase 버전으로 바꿔야 합니다.
+- firebase-config.js는 기존에 GitHub에 올린 실제 설정값 파일을 그대로 유지하세요.
+- 이 zip 안에는 firebase-config.js를 넣지 않았습니다.
+- 위 4개 파일만 /chan1 폴더에 덮어쓰기 업로드하면 됩니다.
 
-감사
+수정 내용:
+1. 미션 완료 상태를 missions[].done에 저장하지 않음
+2. 날짜별 완료 기록 dailyDone[YYYY-MM-DD][missionId]에 저장
+3. 날짜가 바뀌면 같은 미션 버튼을 다시 누를 수 있음
+4. 찬 화면에서 누른 기록이 Firebase에 저장되어 관리자 화면에서 실시간으로 보임
+5. 예전 dailyLights 데이터도 dailyBadges로 읽도록 보정
